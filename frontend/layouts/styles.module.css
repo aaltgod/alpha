@@ -1,0 +1,16 @@
+.menu {
+	position: relative;
+	z-index: var(--z-dropdown);
+}
+
+.layout {
+	min-height: 100vh;
+}
+
+.page {
+	display: block;
+	flex-grow: 1;
+	width: 100%;
+	margin: 0 auto;
+	padding: 20px 24px;
+}
