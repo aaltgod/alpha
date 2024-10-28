@@ -1,7 +1,6 @@
 use axum::http::StatusCode;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::domain;
