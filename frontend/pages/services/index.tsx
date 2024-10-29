@@ -1,10 +1,8 @@
-import { defineComponent } from "vue"
+import { defineComponent } from "vue";
 
 export default defineComponent({
-	name: 'ServicesPage',
-	setup() {
-		return () => (
-			<div>Services</div>
-		)
-	},
-})
+  name: "ServicesPage",
+  setup() {
+    return () => <div>Services</div>;
+  },
+});

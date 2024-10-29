@@ -1,16 +1,11 @@
-import { defineComponent } from 'vue'
-import { useRouter } from '#app'
-
+import { defineComponent } from "vue";
+import { useRouter } from "#app";
 
 export default defineComponent({
-	name: 'IndexPage',
-	setup() {
-		const $router = useRouter()
+  name: "IndexPage",
+  setup() {
+    const $router = useRouter();
 
-		$router.replace(`/streams`)
-
-		return () => (
-			<></>
-		)
-	},
-})
+    $router.replace(`/streams`);
+  },
+});
