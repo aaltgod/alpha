@@ -80,7 +80,6 @@ export default defineComponent({
     const selectedRow = ref<Row>(rows[0]);
 
     const handleButtonClick = (row: Row) => {
-      console.log(row);
       selectedRow.value = row;
     };
 
@@ -105,16 +104,17 @@ export default defineComponent({
                   </TableHeader>
                   <TableBody>
                     {rows.map((row) => (
-                      <TableRow class="w-screen">
-                        <button
-                          onClick={() => {
-                            handleButtonClick(row);
-                          }}
-                        >
-                          <TableCell class="hidden sm:table-cell">
-                            {row.number}
-                          </TableCell>
-                        </button>
+                      <TableRow
+                        key={row.number}
+                        class="w-screen"
+                        onClick={() => {
+                          handleButtonClick(row);
+                        }}
+                        isSelected={row.number === selectedRow.value.number}
+                      >
+                        <TableCell class="hidden sm:table-cell">
+                          {row.number}
+                        </TableCell>
                         <TableCell class="hidden sm:table-cell">
                           {row.service}
                         </TableCell>
