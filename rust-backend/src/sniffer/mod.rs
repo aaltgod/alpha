@@ -4,15 +4,15 @@ use std::sync::Arc;
 use std::time;
 
 use anyhow::anyhow;
+use pnet::datalink::{channel, Config};
+use pnet::packet::ethernet::EtherTypes::Ipv4;
+use pnet::packet::ip::IpNextHeaderProtocols;
+use pnet::packet::tcp::{TcpFlags, TcpPacket};
+use pnet::packet::PrimitiveValues;
 use pnet::{
     datalink::Channel::Ethernet,
     packet::{ethernet::EthernetPacket, ipv4::Ipv4Packet, Packet},
 };
-use pnet::datalink::{channel, Config};
-use pnet::packet::ethernet::EtherTypes::Ipv4;
-use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::PrimitiveValues;
-use pnet::packet::tcp::{TcpFlags, TcpPacket};
 use tokio::sync::Mutex;
 
 use crate::domain;
@@ -61,7 +61,10 @@ impl Sniffer {
             .find(|interface| interface.name.eq(&self_handler.interface_name));
 
         if interface.is_none() {
-            return Err(anyhow!("interface `{}` doesn't exist", &self_handler.interface_name));
+            return Err(anyhow!(
+                "interface `{}` doesn't exist",
+                &self_handler.interface_name
+            ));
         }
 
         let (_tx, mut rx) = match channel(&interface.unwrap(), Config::default()) {
@@ -85,7 +88,7 @@ impl Sniffer {
             }),
             tokio::spawn(async move { self_manager.manage_tcp_streams().await }),
         ])
-            .await;
+        .await;
 
         Ok(())
     }
@@ -165,7 +168,7 @@ impl Sniffer {
                                 direction: info.packet_direction,
                                 // FIXME: cringe moment
                                 payload: info.payload.as_str().to_string(),
-                                // пакет по-текущему idx относится к стриму по этому же idx из stream_ids.
+                                // пакет по текущему idx относится к стриму по этому же idx из stream_ids.
                                 stream_id: *stream_ids.get(idx).unwrap(),
                                 at: info.at,
                             })

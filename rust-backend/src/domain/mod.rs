@@ -3,12 +3,25 @@ use std::fmt::Display;
 
 use regex::bytes;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Service {
     pub id: i64,
     pub name: String,
     pub port: i16,
-    pub flag_regexp: bytes::Regex,
+}
+
+#[derive(Clone, Debug)]
+pub struct Rule {
+    pub id: i64,
+    pub name: String,
+    pub regexp: bytes::Regex,
+    pub color: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct ServiceWithRules {
+    pub service: Service,
+    pub rules: Vec<Rule>,
 }
 
 #[derive(Debug, Clone, Eq)]

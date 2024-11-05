@@ -1,26 +1,30 @@
-use axum::{Extension, Json};
-use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
 use crate::domain;
 use crate::handler::types;
-use crate::handler::types::{AppError, Packet, StreamIDWithPackets};
+use crate::handler::types::{AppError, Packet, StreamWithPackets};
+use axum::{Extension, Json};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+
+use super::types::Stream;
 
 pub async fn get_streams_by_service_ids(
     ctx: Extension<types::AppContext>,
     Json(req): Json<GetStreamsByServiceIDsRequest>,
 ) -> Result<Json<GetStreamsByServiceIDsResponse>, AppError> {
-    let services = ctx.services_repo
-        .get_services_by_ids(req.service_ids)
-        .await.
-        map_err(AppError::InternalServerError)?;
+    let rules_by_service = ctx
+        .services_repo
+        .get_rules_by_service(req.service_ids)
+        .await
+        .map_err(AppError::InternalServerError)?;
 
-    let services_slice = services.as_slice();
+    let services = rules_by_service.keys();
 
-    let packets_by_stream = ctx.streams_repo
+    let packets_by_stream = ctx
+        .streams_repo
         .get_packets_by_stream(
-            services_slice
-                .iter()
-                .map(|service| service.port)
-                .collect(),
+            services.into_iter().map(|s| s.port).collect(),
             req.last_stream_id,
             // TODO: сделать limit настраиваемым.
             20,
@@ -28,28 +32,68 @@ pub async fn get_streams_by_service_ids(
         .await
         .map_err(AppError::InternalServerError)?;
 
-    let mut resp = GetStreamsByServiceIDsResponse { stream_ids_with_packets: Vec::with_capacity(packets_by_stream.len()) };
+    let mut rules_by_service_id: HashMap<i64, Vec<domain::Rule>> =
+        HashMap::with_capacity(rules_by_service.len());
+
+    for (service, rules) in rules_by_service {
+        rules_by_service_id.insert(service.id, rules);
+    }
+
+    let mut resp = GetStreamsByServiceIDsResponse {
+        stream_with_packets: Vec::with_capacity(packets_by_stream.len()),
+    };
 
     for (stream, packets) in packets_by_stream {
-        resp.stream_ids_with_packets.push(StreamIDWithPackets {
-            stream_id: stream.id,
-            packets: packets
+        let mut regexps: HashMap<String, ()> = HashMap::new();
+        let mut started_at: DateTime<Utc> = Default::default();
+        let mut ended_at: DateTime<Utc> = Default::default();
+
+        packets.into_iter().for_each(|p| {
+            rules_by_service_id
+                .get(&stream.id)
+                .unwrap()
                 .into_iter()
-                .map(|packet| Packet {
-                    direction: packet.direction.to_string(),
-                    payload: packet.payload,
-                    at: packet.at.to_string(),
-                    flag_regexp: services_slice
-                        .iter()
-                        .find(|service| service.port.eq(&stream.service_port))
-                        .map_or("".to_string(), |s| s.flag_regexp.to_string()),
-                    color: match packet.direction {
-                        domain::PacketDirection::IN => "#33FF46".to_string(),
-                        domain::PacketDirection::OUT => "#FF3333".to_string(),
-                    },
-                })
-                .collect(),
-        })
+                .for_each(|r| {
+                    if r.regexp.captures(p.payload.as_bytes()).is_some() {
+                        regexps.entry(r.regexp.to_string());
+                    }
+
+                    if p.at < started_at {
+                        started_at = p.at
+                    }
+
+                    if p.at > ended_at {
+                        ended_at = p.at
+                    }
+                });
+        });
+
+        // resp.stream_with_packets.push(StreamWithPackets {
+        //     stream: Stream {
+        //         id: stream.id,
+        //         service_name: ,
+        //         service_port: 10,
+        //         rule_regexps: regexps.keys().cloned().collect(),
+        //         started_at: started_at.to_string(),
+        //         ended_at: ended_at.to_string(),
+        //     },
+        //     packets: packets
+        //         .into_iter()
+        //         .map(|packet| Packet {
+        //             direction: packet.direction.to_string(),
+        //             payload: packet.payload,
+        //             at: packet.at.to_string(),
+        //             flag_regexp: services
+        //                 .iter()
+        //                 .find(|service| service.port.eq(&stream.service_port))
+        //                 .map_or("".to_string(), |s| s.flag_regexp.to_string()),
+        //             color: match packet.direction {
+        //                 domain::PacketDirection::IN => "#33FF46".to_string(),
+        //                 domain::PacketDirection::OUT => "#FF3333".to_string(),
+        //             },
+        //         })
+        //         .collect(),
+        // })
     }
 
     Ok(Json(resp))
@@ -63,5 +107,5 @@ pub struct GetStreamsByServiceIDsRequest {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct GetStreamsByServiceIDsResponse {
-    pub stream_ids_with_packets: Vec<StreamIDWithPackets>,
+    pub stream_with_packets: Vec<StreamWithPackets>,
 }

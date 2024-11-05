@@ -62,7 +62,6 @@ pub struct Service {
     pub id: i64,
     pub name: String,
     pub port: i16,
-    pub flag_regexp: String,
 }
 
 impl From<domain::Service> for Service {
@@ -71,7 +70,6 @@ impl From<domain::Service> for Service {
             id: service.id,
             name: service.name,
             port: service.port,
-            flag_regexp: service.flag_regexp.to_string(),
         }
     }
 }
@@ -90,7 +88,6 @@ impl From<Vec<domain::Service>> for Services {
                     id: s.id,
                     name: s.name,
                     port: s.port,
-                    flag_regexp: s.flag_regexp.to_string(),
                 })
                 .collect(),
         }
@@ -99,15 +96,30 @@ impl From<Vec<domain::Service>> for Services {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Packet {
+    pub payloads: Vec<Payload>,
     pub direction: String,
-    pub payload: String,
     pub at: String,
-    pub flag_regexp: String,
-    pub color: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct StreamIDWithPackets {
-    pub stream_id: i64,
+pub struct Payload {
+    pub text: String,
+    pub rule_regexp: String,
+    pub rule_color: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Stream {
+    pub id: i64,
+    pub service_name: String,
+    pub service_port: i16,
+    pub rule_regexps: Vec<String>,
+    pub started_at: String,
+    pub ended_at: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StreamWithPackets {
+    pub stream: Stream,
     pub packets: Vec<Packet>,
 }
