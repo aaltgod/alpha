@@ -1,7 +1,6 @@
 use axum::http::StatusCode;
-use axum::Json;
 use axum::response::{IntoResponse, Response};
-use chrono::Utc;
+use axum::Json;
 use serde::{Deserialize, Serialize};
 
 use crate::domain;
@@ -42,7 +41,10 @@ impl IntoResponse for AppError {
         let (status, message) = match self {
             Self::InternalServerError(e) => {
                 error!("{e}");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Внутренняя ошибка".to_owned())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Внутренняя ошибка".to_owned(),
+                )
             }
             Self::BadRequest(msg, e) => {
                 error!("{e}");
