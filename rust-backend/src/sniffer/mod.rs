@@ -125,14 +125,14 @@ impl Sniffer {
                         .sub(tcp_packet_infos.first().unwrap().at)
                         .gt(&self.max_stream_ttl)
                     {
-                        warn!("DONE: {} {:?}", tcp_packet_infos.len(), port_pair);
+                        info!("DONE: {} {:?}", tcp_packet_infos.len(), port_pair);
 
                         completed_stream_port_pairs.push(*port_pair);
                     }
                 }
             }
 
-            warn!(
+            info!(
                 "completed_stream_port_pairs LEN: {}",
                 completed_stream_port_pairs.len()
             );
@@ -254,7 +254,7 @@ impl Sniffer {
             .and_modify(|i| i.push(info.clone()))
             .or_insert(vec![info.clone()]);
 
-        warn!(
+        info!(
             "tcp_packet_info_by_port_pair LEN: {}",
             tcp_packet_info_by_port_pair.len()
         );

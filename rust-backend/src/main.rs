@@ -79,16 +79,16 @@ async fn main() {
 
     futures_util::future::join_all(vec![
         tokio::spawn(async move {
-            // Sniffer::new(
-            //     streams_repo,
-            //     packets_repo,
-            //     sniffer_config.interface,
-            //     sniffer_config.tcp_stream_ttl,
-            //     sniffer_config.max_stream_ttl,
-            // )
-            // .run()
-            // .await
-            // .expect("run sniffer")
+            Sniffer::new(
+                streams_repo,
+                packets_repo,
+                sniffer_config.interface,
+                sniffer_config.tcp_stream_ttl,
+                sniffer_config.max_stream_ttl,
+            )
+            .run()
+            .await
+            .expect("run sniffer")
         }),
         tokio::spawn(async move {
             axum::Server::bind(
