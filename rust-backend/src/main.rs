@@ -5,16 +5,19 @@ extern crate log;
 
 use axum::{
     body::Body,
-    Extension,
     http::{Request, StatusCode},
     middleware::{self, Next},
     response::IntoResponse,
-    Router, routing::{get, post},
+    routing::{get, post},
+    Extension, Router,
 };
 use sqlx::postgres::PgPoolOptions;
 
-use handler::{create_service::create_service, get_services::get_services,
-              get_streams_by_service_ids::get_streams_by_service_ids};
+use handler::{
+    get_rules::get_rules, get_services::get_services,
+    get_streams_by_service_ids::get_streams_by_service_ids, upsert_rule::upsert_rule,
+    upsert_service::upsert_service,
+};
 use repository::db::postgres::packets as packets_repo;
 use repository::db::postgres::services as services_repo;
 use repository::db::postgres::streams as streams_repo;
@@ -23,20 +26,20 @@ use sniffer::Sniffer;
 use crate::handler::types::AppContext;
 use crate::sniffer::external_types::PORTS_TO_SNIFF;
 
+mod config;
 mod domain;
 mod handler;
 mod repository;
 mod sniffer;
-mod config;
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let postgres_config = config::provide_postgres_config().expect("couldn't provide postgres config");
+    let postgres_config =
+        config::provide_postgres_config().expect("couldn't provide postgres config");
     let sniffer_config = config::provide_sniffer_config().expect("couldn't provide sniffer config");
     let server_config = config::provide_server_config().expect("couldn't server sniffer config");
-
 
     let pool = PgPoolOptions::new()
         .max_connections(postgres_config.max_connections)
@@ -57,14 +60,19 @@ async fn main() {
             .expect("couldn't get services from db")
             .into_iter()
             .for_each(|s| {
-                let _ = ports_to_sniff.insert(s.port, s.flag_regexp);
+                ports_to_sniff.insert(s.port, ());
             });
     }
 
     let app = Router::new()
         .route("/get-services", get(get_services))
-        .route("/create-service", post(create_service))
-        .route("/get-streams-by-service-ids", get(get_streams_by_service_ids))
+        .route("/upsert-service", post(upsert_service))
+        .route(
+            "/get-streams-by-service-ids",
+            get(get_streams_by_service_ids),
+        )
+        .route("/get-rules", get(get_rules))
+        .route("/upsert-rule", post(upsert_rule))
         .layer(middleware::from_fn(info_middleware))
         .layer(Extension(AppContext {
             services_repo: services_repo.clone(),
@@ -80,20 +88,22 @@ async fn main() {
                 sniffer_config.tcp_stream_ttl,
                 sniffer_config.max_stream_ttl,
             )
-                .run()
-                .await
-                .expect("run sniffer")
+            .run()
+            .await
+            .expect("run sniffer")
         }),
         tokio::spawn(async move {
-            axum::Server::bind(&format!("{}:{}", server_config.host, server_config.port)
-                .parse()
-                .expect("invalid server addr"))
-                .serve(app.into_make_service())
-                .await
-                .expect("run server")
+            axum::Server::bind(
+                &format!("{}:{}", server_config.host, server_config.port)
+                    .parse()
+                    .expect("invalid server addr"),
+            )
+            .serve(app.into_make_service())
+            .await
+            .expect("run server")
         }),
     ])
-        .await;
+    .await;
 }
 
 async fn info_middleware(

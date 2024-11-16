@@ -1,6 +1,6 @@
-use std::collections::BTreeMap;
 use anyhow::anyhow;
 use sqlx::PgPool;
+use std::collections::BTreeMap;
 
 use crate::domain;
 use crate::repository::db::postgres::packets::types;
@@ -38,9 +38,9 @@ impl Repository {
         "#,
             service_ports.as_slice(),
         )
-            .fetch_all(&self.db)
-            .await
-            .map_err(|e| anyhow!(e.to_string()))?;
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
 
         Ok(records.into_iter().map(|record| record.id).collect())
     }
@@ -61,7 +61,7 @@ impl Repository {
             packets.at FROM (
                         SELECT id, service_port FROM streams
                         WHERE
-                            service_port = ANY($1::integer[])
+                            service_port = ANY($1::INTEGER[])
                         AND
                             id > $2
                         LIMIT $3
@@ -73,8 +73,8 @@ impl Repository {
             stream_id,
             limit
         )
-            .fetch_all(&self.db)
-            .await
+        .fetch_all(&self.db)
+        .await
         {
             Ok(res) => res,
             Err(e) => {
@@ -87,22 +87,23 @@ impl Repository {
 
         let mut result: BTreeMap<domain::Stream, Vec<domain::Packet>> = BTreeMap::new();
 
-        records
-            .into_iter()
-            .for_each(|record| {
-                let packet = domain::Packet {
-                    id: 0,
-                    direction: record.packet_direction.into(),
-                    payload: record.payload,
-                    stream_id: record.stream_id,
-                    at: record.at,
-                };
+        records.into_iter().for_each(|record| {
+            let packet = domain::Packet {
+                id: 0,
+                direction: record.packet_direction.into(),
+                payload: record.payload,
+                stream_id: record.stream_id,
+                at: record.at,
+            };
 
-                result
-                    .entry(domain::Stream { id: record.stream_id, service_port: record.service_port as i16 })
-                    .and_modify(|packets| packets.push(packet.clone()))
-                    .or_insert(vec![packet]);
-            });
+            result
+                .entry(domain::Stream {
+                    id: record.stream_id,
+                    service_port: record.service_port as i16,
+                })
+                .and_modify(|packets| packets.push(packet.clone()))
+                .or_insert(vec![packet]);
+        });
 
         Ok(result)
     }

@@ -62,7 +62,6 @@ pub struct Service {
     pub id: i64,
     pub name: String,
     pub port: i16,
-    pub flag_regexp: String,
 }
 
 impl From<domain::Service> for Service {
@@ -71,43 +70,74 @@ impl From<domain::Service> for Service {
             id: service.id,
             name: service.name,
             port: service.port,
-            flag_regexp: service.flag_regexp.to_string(),
         }
     }
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Services {
-    pub services: Vec<Service>,
-}
+pub struct Services(Vec<Service>);
 
 impl From<Vec<domain::Service>> for Services {
     fn from(services: Vec<domain::Service>) -> Self {
-        Services {
-            services: services
-                .into_iter()
-                .map(|s| Service {
-                    id: s.id,
-                    name: s.name,
-                    port: s.port,
-                    flag_regexp: s.flag_regexp.to_string(),
-                })
-                .collect(),
-        }
+        Services(services.into_iter().map(|s| s.into()).collect())
     }
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Packet {
-    pub direction: String,
     pub payload: String,
+    pub rules_with_borders: Vec<RuleWithBorders>,
+    pub direction: String,
     pub at: String,
-    pub flag_regexp: String,
-    pub color: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct StreamIDWithPackets {
-    pub stream_id: i64,
+pub struct Stream {
+    pub id: i64,
+    pub service_name: String,
+    pub service_port: i16,
+    pub rules: Vec<Rule>,
+    pub started_at: String,
+    pub ended_at: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StreamWithPackets {
+    pub stream: Stream,
     pub packets: Vec<Packet>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Rule {
+    #[serde(skip_deserializing)]
+    pub id: i64,
+    pub name: String,
+    pub regexp: String,
+    pub color: String,
+}
+
+impl From<domain::Rule> for Rule {
+    fn from(rule: domain::Rule) -> Self {
+        Rule {
+            id: rule.id,
+            name: rule.name.to_owned(),
+            regexp: rule.regexp.to_string(),
+            color: rule.color.to_owned(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Rules(Vec<Rule>);
+
+impl From<Vec<domain::Rule>> for Rules {
+    fn from(rules: Vec<domain::Rule>) -> Self {
+        Rules(rules.into_iter().map(|r| r.into()).collect())
+    }
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RuleWithBorders {
+    pub rule: Rule,
+    pub start: i64,
+    pub end: i64,
 }

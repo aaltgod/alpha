@@ -8,7 +8,7 @@ run: compose-up build
 	@sleep 1
 	$(info "RUN $(APP_NAME)")
 
-	sudo RUST_LOG=info ./target/release/$(APP_NAME)
+	sudo RUST_LOG=warn ./target/release/$(APP_NAME)
 
 .PHONY: build
 build:

@@ -48,9 +48,9 @@ impl Repository {
             stream_ids.as_slice(),
             at.as_slice(),
         )
-            .execute(&self.db)
-            .await
-            .map_err(|e| anyhow!(e.to_string()))?;
+        .execute(&self.db)
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
 
         Ok(())
     }
@@ -74,8 +74,8 @@ impl Repository {
         "#,
             stream_ids.as_slice()
         )
-            .fetch_all(&self.db)
-            .await
+        .fetch_all(&self.db)
+        .await
         {
             Ok(res) => res,
             Err(e) => {
