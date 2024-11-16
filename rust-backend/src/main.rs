@@ -14,8 +14,9 @@ use axum::{
 use sqlx::postgres::PgPoolOptions;
 
 use handler::{
-    get_services::get_services, get_streams_by_service_ids::get_streams_by_service_ids,
-    upsert_rule::upsert_rule, upsert_service::upsert_service,
+    get_rules::get_rules, get_services::get_services,
+    get_streams_by_service_ids::get_streams_by_service_ids, upsert_rule::upsert_rule,
+    upsert_service::upsert_service,
 };
 use repository::db::postgres::packets as packets_repo;
 use repository::db::postgres::services as services_repo;
@@ -70,6 +71,7 @@ async fn main() {
             "/get-streams-by-service-ids",
             get(get_streams_by_service_ids),
         )
+        .route("/get-rules", get(get_rules))
         .route("/upsert-rule", post(upsert_rule))
         .layer(middleware::from_fn(info_middleware))
         .layer(Extension(AppContext {

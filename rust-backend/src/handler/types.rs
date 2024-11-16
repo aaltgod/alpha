@@ -2,7 +2,6 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use serde::{Deserialize, Serialize};
 
 use crate::domain;
 use crate::repository::db::postgres::{services as services_repo, streams as streams_repo};
@@ -76,22 +75,11 @@ impl From<domain::Service> for Service {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct Services {
-    pub services: Vec<Service>,
-}
+pub struct Services(Vec<Service>);
 
 impl From<Vec<domain::Service>> for Services {
     fn from(services: Vec<domain::Service>) -> Self {
-        Services {
-            services: services
-                .into_iter()
-                .map(|s| Service {
-                    id: s.id,
-                    name: s.name,
-                    port: s.port,
-                })
-                .collect(),
-        }
+        Services(services.into_iter().map(|s| s.into()).collect())
     }
 }
 
@@ -139,6 +127,14 @@ impl From<domain::Rule> for Rule {
     }
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct Rules(Vec<Rule>);
+
+impl From<Vec<domain::Rule>> for Rules {
+    fn from(rules: Vec<domain::Rule>) -> Self {
+        Rules(rules.into_iter().map(|r| r.into()).collect())
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RuleWithBorders {
     pub rule: Rule,

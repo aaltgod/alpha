@@ -1,3 +1,4 @@
+pub mod get_rules;
 pub mod get_services;
 pub mod get_streams_by_service_ids;
 pub mod types;
