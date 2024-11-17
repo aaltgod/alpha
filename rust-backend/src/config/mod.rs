@@ -3,7 +3,7 @@ use anyhow::anyhow;
 #[derive(Debug)]
 pub struct PostgresConfig {
     pub host: String,
-    pub port: i16,
+    pub port: i32,
     pub username: String,
     pub password: String,
     pub database_name: String,
@@ -15,7 +15,7 @@ pub struct PostgresConfig {
 #[derive(Debug)]
 pub struct ServerConfig {
     pub host: String,
-    pub port: i16,
+    pub port: i32,
 }
 
 #[derive(Debug)]
@@ -47,10 +47,12 @@ pub fn provide_postgres_config() -> Result<PostgresConfig, anyhow::Error> {
             .map_err(|_| anyhow!("POSTGRES_MAX_CONNECTIONS not found in .env"))?
             .parse()
             .map_err(|e| anyhow!("invalid POSTGRES_MAX_CONNECTIONS: {e}"))?,
-        timeout: std::time::Duration::from_secs(dotenv::var("POSTGRES_TIMEOUT")
-            .map_err(|_| anyhow!("POSTGRES_TIMEOUT not found in .env"))?
-            .parse()
-            .map_err(|e| anyhow!("invalid POSTGRES_TIMEOUT: {e}"))?),
+        timeout: std::time::Duration::from_secs(
+            dotenv::var("POSTGRES_TIMEOUT")
+                .map_err(|_| anyhow!("POSTGRES_TIMEOUT not found in .env"))?
+                .parse()
+                .map_err(|e| anyhow!("invalid POSTGRES_TIMEOUT: {e}"))?,
+        ),
     })
 }
 
@@ -58,8 +60,7 @@ pub fn provide_server_config() -> Result<ServerConfig, anyhow::Error> {
     dotenv::dotenv().map_err(|e| anyhow!(e.to_string()))?;
 
     Ok(ServerConfig {
-        host: dotenv::var("SERVER_HOST")
-            .map_err(|_| anyhow!("SERVER_HOST not found in .env"))?,
+        host: dotenv::var("SERVER_HOST").map_err(|_| anyhow!("SERVER_HOST not found in .env"))?,
         port: dotenv::var("SERVER_PORT")
             .map_err(|_| anyhow!("SERVER_PORT not found in .env"))?
             .parse()
@@ -75,14 +76,17 @@ pub fn provide_sniffer_config() -> Result<SnifferConfig, anyhow::Error> {
             .map_err(|_| anyhow!("SNIFFER_INTERFACE not found in .env"))?
             .parse()
             .map_err(|e| anyhow!("invalid SNIFFER_INTERFACE: {e}"))?,
-        tcp_stream_ttl: chrono::Duration::seconds(dotenv::var("SNIFFER_TCP_STREAM_TTL")
-            .map_err(|_| anyhow!("SNIFFER_TCP_STREAM_TTL not found in .env"))?
-            .parse()
-            .map_err(|e| anyhow!("invalid SNIFFER_TCP_STREAM_TTL: {e}"))?),
-        max_stream_ttl: chrono::Duration::seconds(dotenv::var("SNIFFER_MAX_STREAM_TTL")
-            .map_err(|_| anyhow!("SNIFFER_MAX_STREAM_TTL not found in .env"))?
-            .parse()
-            .map_err(|e| anyhow!("invalid SNIFFER_MAX_STREAM_TTL: {e}"))?),
+        tcp_stream_ttl: chrono::Duration::seconds(
+            dotenv::var("SNIFFER_TCP_STREAM_TTL")
+                .map_err(|_| anyhow!("SNIFFER_TCP_STREAM_TTL not found in .env"))?
+                .parse()
+                .map_err(|e| anyhow!("invalid SNIFFER_TCP_STREAM_TTL: {e}"))?,
+        ),
+        max_stream_ttl: chrono::Duration::seconds(
+            dotenv::var("SNIFFER_MAX_STREAM_TTL")
+                .map_err(|_| anyhow!("SNIFFER_MAX_STREAM_TTL not found in .env"))?
+                .parse()
+                .map_err(|e| anyhow!("invalid SNIFFER_MAX_STREAM_TTL: {e}"))?,
+        ),
     })
 }
-

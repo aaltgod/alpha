@@ -206,8 +206,8 @@ impl Sniffer {
     }
 
     async fn handle_tcp_packet(&self, packet: TcpPacket<'_>) {
-        let source_port = packet.get_source() as i16;
-        let destination_port = packet.get_destination() as i16;
+        let source_port = packet.get_source() as i32;
+        let destination_port = packet.get_destination() as i32;
 
         let (port_pair, packet_direction): (PortPair, Option<domain::PacketDirection>) = {
             let ports = PORTS_TO_SNIFF.lock().await;

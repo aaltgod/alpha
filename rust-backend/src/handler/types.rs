@@ -61,7 +61,7 @@ pub struct Service {
     #[serde(skip_deserializing)]
     pub id: i64,
     pub name: String,
-    pub port: i16,
+    pub port: i32,
 }
 
 impl From<domain::Service> for Service {
@@ -84,6 +84,12 @@ impl From<Vec<domain::Service>> for Services {
 }
 
 #[derive(Clone, Debug, Serialize)]
+pub struct ServiceWithRules {
+    pub service: Service,
+    pub rules: Rules,
+}
+
+#[derive(Clone, Debug, Serialize)]
 pub struct Packet {
     pub payload: String,
     pub rules_with_borders: Vec<RuleWithBorders>,
@@ -95,7 +101,7 @@ pub struct Packet {
 pub struct Stream {
     pub id: i64,
     pub service_name: String,
-    pub service_port: i16,
+    pub service_port: i32,
     pub rules: Vec<Rule>,
     pub started_at: String,
     pub ended_at: String,
