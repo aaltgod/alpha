@@ -47,7 +47,7 @@ impl Repository {
 
     pub async fn get_packets_by_stream(
         &self,
-        ports: Vec<i16>,
+        ports: Vec<i32>,
         stream_id: i64,
         limit: i64,
     ) -> Result<BTreeMap<domain::Stream, Vec<domain::Packet>>, anyhow::Error> {
@@ -99,7 +99,7 @@ impl Repository {
             result
                 .entry(domain::Stream {
                     id: record.stream_id,
-                    service_port: record.service_port as i16,
+                    service_port: record.service_port as i32,
                 })
                 .and_modify(|packets| packets.push(packet.clone()))
                 .or_insert(vec![packet]);

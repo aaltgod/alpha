@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::{BTreeMap, HashMap},
+    vec,
+};
 
 use anyhow::anyhow;
 use regex::bytes;
@@ -75,17 +78,17 @@ impl Repository {
 
         let mut rules_by_service: HashMap<domain::Service, Vec<domain::Rule>> = HashMap::new();
 
-        records.into_iter().for_each(|record| {
+        for record in records.into_iter() {
             let service = domain::Service {
                 id: record.service_id,
                 name: record.service_name,
-                port: record.service_port as i16,
+                port: record.service_port as i32,
             };
 
             let rule = domain::Rule {
                 id: record.rule_id,
                 name: record.rule_name,
-                regexp: bytes::Regex::new(&record.rule_regexp).unwrap(),
+                regexp: bytes::Regex::new(&record.rule_regexp)?,
                 color: record.rule_color,
             };
 
@@ -93,7 +96,7 @@ impl Repository {
                 .entry(service)
                 .and_modify(|rules| rules.push(rule.clone()))
                 .or_insert(vec![rule]);
-        });
+        }
 
         Ok(rules_by_service)
     }
@@ -123,11 +126,99 @@ impl Repository {
             services.push(domain::Service {
                 id: record.id,
                 name: record.name,
-                port: record.port as i16,
+                port: record.port as i32,
             });
         }
 
         Ok(services)
+    }
+
+    pub async fn delete_service(&self, id: i64) -> Result<domain::Service, anyhow::Error> {
+        let record = sqlx::query!(
+            r#"
+        DELETE FROM services
+        WHERE id = $1
+        RETURNING 
+            id AS service_id,
+            name AS service_name,
+            port AS service_port
+        "#,
+            id,
+        )
+        .fetch_one(&self.db)
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
+
+        Ok(domain::Service {
+            id: record.service_id,
+            name: record.service_name,
+            port: record.service_port,
+        })
+    }
+
+    pub async fn get_services_with_rules(
+        &self,
+    ) -> Result<BTreeMap<domain::Service, Vec<domain::Rule>>, anyhow::Error> {
+        let records = match sqlx::query!(
+            r#"
+        SELECT
+            services.id AS service_id,
+            services.name AS service_name,
+            services.port AS service_port,
+            rules.id AS rule_id,
+            rules.name AS rule_name,
+            rules."regexp" AS rule_regexp,
+            rules.color AS rule_color
+        FROM
+            services
+        LEFT JOIN service_id_to_rule_id ON services.id = service_id_to_rule_id.service_id
+        LEFT JOIN rules ON service_id_to_rule_id.rule_id = rules.id;
+        "#
+        )
+        .fetch_all(&self.db)
+        .await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                return match e {
+                    sqlx::Error::RowNotFound => Ok(BTreeMap::default()),
+                    _ => Err(anyhow!(e.to_string())),
+                };
+            }
+        };
+
+        let mut res: BTreeMap<domain::Service, Vec<domain::Rule>> = BTreeMap::new();
+
+        for record in records.into_iter() {
+            let rule = domain::Rule {
+                id: record.rule_id.map_or(0, |id| id),
+                name: record.rule_name.map_or("".to_string(), |n| n),
+                regexp: record
+                    .rule_regexp
+                    .map_or(bytes::Regex::new(""), |regexp| bytes::Regex::new(&regexp))?,
+                color: record.rule_color.map_or("".to_string(), |c| c),
+            };
+
+            res.entry(domain::Service {
+                id: record.service_id,
+                name: record.service_name,
+                port: record.service_port as i32,
+            })
+            .and_modify(|rules| {
+                if rule.id.ne(&0) {
+                    rules.push(rule.clone());
+                }
+            })
+            .or_insert({
+                if rule.id.ne(&0) {
+                    vec![rule]
+                } else {
+                    vec![]
+                }
+            });
+        }
+
+        Ok(res)
     }
 
     pub async fn upsert_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
@@ -223,6 +314,22 @@ impl Repository {
         Ok(rules)
     }
 
+    pub async fn delete_rule(&self, id: i64) -> Result<(), anyhow::Error> {
+        sqlx::query!(
+            r#"
+        DELETE FROM rules
+        WHERE
+            id = $1
+        "#,
+            id,
+        )
+        .execute(&self.db)
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
+
+        Ok(())
+    }
+
     pub async fn create_service_id_to_rule_ids(
         &self,
         service_id: i64,
@@ -239,6 +346,29 @@ impl Repository {
         "#,
             service_id,
             rule_ids as _,
+        )
+        .execute(&self.db)
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
+
+        Ok(())
+    }
+
+    pub async fn delete_service_id_to_rule_id(
+        &self,
+        service_id: i64,
+        rule_id: i64,
+    ) -> Result<(), anyhow::Error> {
+        sqlx::query!(
+            r#"
+        DELETE FROM service_id_to_rule_id
+        WHERE 
+            service_id = $1
+        AND
+            rule_id = $2
+        "#,
+            service_id,
+            rule_id,
         )
         .execute(&self.db)
         .await

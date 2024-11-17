@@ -33,7 +33,7 @@ pub async fn get_streams_by_service_ids(
         .await
         .map_err(AppError::InternalServerError)?;
 
-    let mut rules_by_service_port: HashMap<i16, Vec<domain::Rule>> =
+    let mut rules_by_service_port: HashMap<i32, Vec<domain::Rule>> =
         HashMap::with_capacity(rules_by_service.len());
 
     for (service, rules) in rules_by_service.clone() {

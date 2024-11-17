@@ -3,11 +3,11 @@ use std::fmt::Display;
 
 use regex::bytes;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Service {
     pub id: i64,
     pub name: String,
-    pub port: i16,
+    pub port: i32,
 }
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ pub struct ServiceWithRules {
 #[derive(Debug, Clone, Eq)]
 pub struct Stream {
     pub id: i64,
-    pub service_port: i16,
+    pub service_port: i32,
 }
 
 impl Ord for Stream {
