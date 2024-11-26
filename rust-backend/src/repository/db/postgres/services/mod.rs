@@ -354,10 +354,10 @@ impl Repository {
         Ok(())
     }
 
-    pub async fn delete_service_id_to_rule_id(
+    pub async fn delete_service_id_to_rule_ids(
         &self,
         service_id: i64,
-        rule_id: i64,
+        rule_ids: Vec<i64>,
     ) -> Result<(), anyhow::Error> {
         sqlx::query!(
             r#"
@@ -365,10 +365,10 @@ impl Repository {
         WHERE 
             service_id = $1
         AND
-            rule_id = $2
+            rule_id = ANY($2)
         "#,
             service_id,
-            rule_id,
+            rule_ids as _,
         )
         .execute(&self.db)
         .await
