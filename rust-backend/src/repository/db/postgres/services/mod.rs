@@ -253,7 +253,6 @@ impl Repository {
     }
 
     pub async fn update_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
-        warn!("{:?}", rule);
         sqlx::query!(
             r#"
         UPDATE rules SET
