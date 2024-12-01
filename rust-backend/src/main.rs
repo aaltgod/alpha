@@ -23,6 +23,7 @@ use repository::db::postgres::packets as packets_repo;
 use repository::db::postgres::services as services_repo;
 use repository::db::postgres::streams as streams_repo;
 use sniffer::Sniffer;
+use tower_http::cors::CorsLayer;
 
 use crate::handler::types::AppContext;
 use crate::sniffer::external_types::PORTS_TO_SNIFF;
@@ -78,6 +79,7 @@ async fn main() {
         .route("/update-rule", put(update_rule))
         .route("/delete-rule", delete(delete_rule))
         .route("/delete-service-to-rules", delete(delete_service_to_rules))
+        .layer(CorsLayer::permissive())
         .layer(middleware::from_fn(info_middleware))
         .layer(Extension(AppContext {
             services_repo: services_repo.clone(),
