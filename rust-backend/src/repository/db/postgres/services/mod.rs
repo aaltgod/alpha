@@ -234,6 +234,7 @@ impl Repository {
     }
 
     pub async fn create_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
+    pub async fn create_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
         sqlx::query!(
             r#"
         INSERT INTO rules(name, packet_direction, regexp, color)
