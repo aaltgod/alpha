@@ -117,7 +117,7 @@ pub async fn get_streams_by_service_ids(
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GetStreamsByServiceIDsRequest {
-    pub service_ids: Vec<i64>,
+    pub service_ids: Vec<i32>,
     pub last_stream_id: i64,
 }
 

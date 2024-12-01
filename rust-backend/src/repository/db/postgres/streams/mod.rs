@@ -107,4 +107,60 @@ impl Repository {
 
         Ok(result)
     }
+
+    pub async fn get_last_streams(
+        &self,
+        limit: i64,
+    ) -> Result<BTreeMap<domain::Stream, Vec<domain::Packet>>, anyhow::Error> {
+        let records = match sqlx::query!(
+            r#"
+        SELECT
+            streams.id AS stream_id,
+            streams.service_port AS service_port,
+            packets.direction AS "packet_direction: types::PacketDirection",
+            packets.payload,
+            packets.at FROM (
+                        SELECT id, service_port FROM streams
+                        ORDER BY id DESC
+                        LIMIT $1
+                    ) AS streams
+                        INNER JOIN packets ON streams.id = packets.stream_id
+        ORDER BY streams.id, packets.at
+        "#,
+            limit
+        )
+        .fetch_all(&self.db)
+        .await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                return match e {
+                    sqlx::Error::RowNotFound => Ok(BTreeMap::default()),
+                    _ => Err(anyhow!(e.to_string())),
+                };
+            }
+        };
+
+        let mut result: BTreeMap<domain::Stream, Vec<domain::Packet>> = BTreeMap::new();
+
+        records.into_iter().for_each(|record| {
+            let packet = domain::Packet {
+                id: 0,
+                direction: record.packet_direction.into(),
+                payload: record.payload,
+                stream_id: record.stream_id,
+                at: record.at,
+            };
+
+            result
+                .entry(domain::Stream {
+                    id: record.stream_id,
+                    service_port: record.service_port as i32,
+                })
+                .and_modify(|packets| packets.push(packet.clone()))
+                .or_insert(vec![packet]);
+        });
+
+        Ok(result)
+    }
 }
