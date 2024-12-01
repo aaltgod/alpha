@@ -46,7 +46,7 @@ impl Repository {
 
     pub async fn get_rules_by_service(
         &self,
-        service_ids: Vec<i64>,
+        service_ids: Vec<i32>,
     ) -> Result<HashMap<domain::Service, Vec<domain::Rule>>, anyhow::Error> {
         let records = match sqlx::query!(
             r#"

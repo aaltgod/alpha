@@ -15,9 +15,10 @@ use sqlx::postgres::PgPoolOptions;
 
 use handler::{
     create_rule::create_rule, delete_rule::delete_rule, delete_service::delete_service,
-    delete_service_to_rules::delete_service_to_rules, get_rules::get_rules,
-    get_services::get_services, get_streams_by_service_ids::get_streams_by_service_ids,
-    update_rule::update_rule, upsert_service::upsert_service,
+    delete_service_to_rules::delete_service_to_rules, get_last_streams::get_last_streams,
+    get_rules::get_rules, get_services::get_services,
+    get_streams_by_service_ids::get_streams_by_service_ids, update_rule::update_rule,
+    upsert_service::upsert_service,
 };
 use repository::db::postgres::packets as packets_repo;
 use repository::db::postgres::services as services_repo;
@@ -70,6 +71,7 @@ async fn main() {
         .route("/get-services", get(get_services))
         .route("/upsert-service", post(upsert_service))
         .route("/delete-service", delete(delete_service))
+        .route("/get-last-streams", get(get_last_streams))
         .route(
             "/get-streams-by-service-ids",
             get(get_streams_by_service_ids),
