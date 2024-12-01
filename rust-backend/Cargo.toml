@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.83"
 axum = { version = "0.6.20", features = ["macros"] }
 chrono = "0.4.38"
+dotenv = "0.15.0"
 env_logger = "0.10.0"
 futures = "0.3.29"
 futures-util = "0.3.29"
@@ -16,12 +18,17 @@ lazy_static = "1.4.0"
 log = "0.4.20"
 notify = "6.1.1"
 pnet = "0.34.0"
+regex = "1.10.4"
 serde = { version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.117"
 sqlx = { version = "0.7.2", features = [
-    "runtime-tokio-rustls",
+    "runtime-tokio",
     "any",
     "postgres",
+    "chrono",
+    "macros"
 ] }
 tokio = { version = "1.34.0", features = ["full"] }
+tower-http = { version = "0.4.4", features = ["cors"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

@@ -8,7 +8,7 @@ run: compose-up build
 	@sleep 1
 	$(info "RUN $(APP_NAME)")
 
-	sudo RUST_LOG=info ./target/release/$(APP_NAME)
+	sudo RUST_LOG=warn ./target/release/$(APP_NAME)
 
 .PHONY: build
 build:
@@ -41,12 +41,12 @@ migration-reset:
 
 .PHONY: compose-up
 compose-up:
-	docker compose -p bezdna -f ./docker-compose.yaml up -d
+	docker compose -p alpha -f ./docker-compose.yaml up -d
 
 .PHONY: compose-stop
 compose-stop:
-	docker compose -p bezdna -f ./docker-compose.yaml stop
+	docker compose -p alpha -f ./docker-compose.yaml stop
 
 .PHONY: compose-down
 compose-down:
-	docker compose -p bezdna -f ./docker-compose.yaml down
+	docker compose -p alpha -f ./docker-compose.yaml down
