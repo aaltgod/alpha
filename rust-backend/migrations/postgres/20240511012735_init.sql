@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS services (
 CREATE TABLE IF NOT EXISTS rules (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
+    packet_direction packet_direction NOT NULL,
     regexp TEXT NOT NULL,
     color TEXT NOT NULL
 );

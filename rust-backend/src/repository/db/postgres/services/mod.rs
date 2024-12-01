@@ -3,11 +3,15 @@ use std::{
     vec,
 };
 
+use packets::types;
+
 use anyhow::anyhow;
 use regex::bytes;
 use sqlx::PgPool;
 
-use crate::domain;
+use crate::{domain, repository::db::postgres::packets::types::PacketDirection};
+
+use super::packets;
 
 #[derive(Clone)]
 pub struct Repository {
@@ -52,6 +56,7 @@ impl Repository {
             services.port AS service_port,
             rules.id AS rule_id,
             rules.name AS rule_name,
+            rules.packet_direction AS "rule_packet_direction: types::PacketDirection",
             rules.regexp AS rule_regexp,
             rules.color AS rule_color
         FROM services
@@ -88,6 +93,7 @@ impl Repository {
             let rule = domain::Rule {
                 id: record.rule_id,
                 name: record.rule_name,
+                packet_direction: record.rule_packet_direction.into(),
                 regexp: bytes::Regex::new(&record.rule_regexp)?,
                 color: record.rule_color,
             };
@@ -167,6 +173,7 @@ impl Repository {
             services.port AS service_port,
             rules.id AS rule_id,
             rules.name AS rule_name,
+            rules.packet_direction AS "rule_packet_direction: types::PacketDirection",
             rules."regexp" AS rule_regexp,
             rules.color AS rule_color
         FROM
@@ -193,16 +200,18 @@ impl Repository {
             let rule = domain::Rule {
                 id: record.rule_id.map_or(0, |id| id),
                 name: record.rule_name.map_or("".to_string(), |n| n),
+                packet_direction: record.rule_packet_direction.unwrap().into(),
                 regexp: record
                     .rule_regexp
                     .map_or(bytes::Regex::new(""), |regexp| bytes::Regex::new(&regexp))?,
                 color: record.rule_color.map_or("".to_string(), |c| c),
             };
 
+            // Значения должны возвращаться всегда.
             res.entry(domain::Service {
                 id: record.service_id,
                 name: record.service_name,
-                port: record.service_port as i32,
+                port: record.service_port,
             })
             .and_modify(|rules| {
                 if rule.id.ne(&0) {
@@ -224,15 +233,18 @@ impl Repository {
     pub async fn upsert_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
         sqlx::query!(
             r#"
-        INSERT INTO rules(name, regexp, color)
-            VALUES($1, $2, $3)
+        INSERT INTO rules(name, packet_direction, regexp, color)
+            VALUES($1, $2, $3, $4)
                 ON CONFLICT ON CONSTRAINT rules_pkey
 	                DO UPDATE SET
 				        name=EXCLUDED.name,
+                        packet_direction=EXCLUDED.packet_direction,
                         regexp=EXCLUDED.regexp,
                         color=EXCLUDED.color
         "#,
             rule.name,
+            // hmmm nice moment
+            packets::types::PacketDirection::from(rule.packet_direction) as PacketDirection,
             rule.regexp.to_string(),
             rule.color,
         )
@@ -246,7 +258,12 @@ impl Repository {
     pub async fn get_all_rules(&self) -> Result<Vec<domain::Rule>, anyhow::Error> {
         let records = match sqlx::query!(
             r#"
-        SELECT id, name, regexp, color
+        SELECT
+                id,
+                name,
+                packet_direction AS "packet_direction: types::PacketDirection",
+                regexp,
+                color
         FROM rules
         "#
         )
@@ -268,6 +285,7 @@ impl Repository {
             rules.push(domain::Rule {
                 id: record.id,
                 name: record.name,
+                packet_direction: record.packet_direction.into(),
                 regexp: bytes::Regex::new(&record.regexp)?,
                 color: record.color,
             });
@@ -282,7 +300,12 @@ impl Repository {
     ) -> Result<Vec<domain::Rule>, anyhow::Error> {
         let records = match sqlx::query!(
             r#"
-        SELECT id, name, regexp, color
+         SELECT
+                id,
+                name,
+                packet_direction AS "packet_direction: types::PacketDirection",
+                regexp,
+                color
         FROM rules
         WHERE id = ANY($1)
         "#,
@@ -306,6 +329,7 @@ impl Repository {
             rules.push(domain::Rule {
                 id: record.id,
                 name: record.name,
+                packet_direction: record.packet_direction.into(),
                 regexp: bytes::Regex::new(&record.regexp)?,
                 color: record.color,
             });

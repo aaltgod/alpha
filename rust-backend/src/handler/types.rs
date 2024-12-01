@@ -118,6 +118,7 @@ pub struct Rule {
     #[serde(skip_deserializing)]
     pub id: i64,
     pub name: String,
+    pub packet_direction: String,
     pub regexp: String,
     pub color: String,
 }
@@ -127,6 +128,7 @@ impl From<domain::Rule> for Rule {
         Rule {
             id: rule.id,
             name: rule.name.to_owned(),
+            packet_direction: rule.packet_direction.to_string(),
             regexp: rule.regexp.to_string(),
             color: rule.color.to_owned(),
         }

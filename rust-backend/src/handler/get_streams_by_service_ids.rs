@@ -58,6 +58,10 @@ pub async fn get_streams_by_service_ids(
                 .map_or(vec![], |rules| rules.to_owned())
                 .into_iter()
                 .for_each(|r| {
+                    if r.packet_direction.ne(&p.direction) {
+                        return;
+                    }
+
                     r.regexp.find_iter(p.payload.as_bytes()).for_each(|t| {
                         let rule: Rule = r.to_owned().into();
 
@@ -69,15 +73,15 @@ pub async fn get_streams_by_service_ids(
 
                         rules_map.insert(rule, ());
                     });
-
-                    if p.at < started_at {
-                        started_at = p.at
-                    }
-
-                    if p.at > ended_at {
-                        ended_at = p.at
-                    }
                 });
+
+            if p.at < started_at {
+                started_at = p.at
+            }
+
+            if p.at > ended_at {
+                ended_at = p.at
+            }
 
             handler_packets.push(Packet {
                 payload: p.payload,
