@@ -6,9 +6,9 @@ use serde::Deserialize;
 use crate::domain::{self, PacketDirection};
 use crate::handler::types::{AppContext, AppError, AppResponse, Rule};
 
-pub async fn upsert_rule(
+pub async fn create_rule(
     ctx: Extension<AppContext>,
-    Json(req): Json<UpsertRuleRequest>,
+    Json(req): Json<CreateRuleRequest>,
 ) -> Result<AppResponse, AppError> {
     let name = req.rule.name;
     let packet_direction =
@@ -26,7 +26,7 @@ pub async fn upsert_rule(
     })?;
 
     ctx.services_repo
-        .upsert_rule(domain::Rule {
+        .create_rule(domain::Rule {
             id: 0,
             name,
             packet_direction,
@@ -41,6 +41,6 @@ pub async fn upsert_rule(
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(transparent)]
-pub struct UpsertRuleRequest {
+pub struct CreateRuleRequest {
     pub rule: Rule,
 }
