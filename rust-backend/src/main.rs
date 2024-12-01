@@ -8,16 +8,16 @@ use axum::{
     http::{Request, StatusCode},
     middleware::{self, Next},
     response::IntoResponse,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Extension, Router,
 };
 use sqlx::postgres::PgPoolOptions;
 
 use handler::{
-    delete_rule::delete_rule, delete_service::delete_service,
+    create_rule::create_rule, delete_rule::delete_rule, delete_service::delete_service,
     delete_service_to_rules::delete_service_to_rules, get_rules::get_rules,
     get_services::get_services, get_streams_by_service_ids::get_streams_by_service_ids,
-    upsert_rule::upsert_rule, upsert_service::upsert_service,
+    update_rule::update_rule, upsert_service::upsert_service,
 };
 use repository::db::postgres::packets as packets_repo;
 use repository::db::postgres::services as services_repo;
@@ -74,7 +74,8 @@ async fn main() {
             get(get_streams_by_service_ids),
         )
         .route("/get-rules", get(get_rules))
-        .route("/upsert-rule", post(upsert_rule))
+        .route("/create-rule", post(create_rule))
+        .route("/update-rule", put(update_rule))
         .route("/delete-rule", delete(delete_rule))
         .route("/delete-service-to-rules", delete(delete_service_to_rules))
         .layer(middleware::from_fn(info_middleware))

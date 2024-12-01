@@ -115,7 +115,6 @@ pub struct StreamWithPackets {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Rule {
-    #[serde(skip_deserializing)]
     pub id: i64,
     pub name: String,
     pub packet_direction: String,

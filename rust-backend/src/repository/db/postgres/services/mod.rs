@@ -233,23 +233,43 @@ impl Repository {
         Ok(res)
     }
 
-    pub async fn upsert_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
+    pub async fn create_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
         sqlx::query!(
             r#"
         INSERT INTO rules(name, packet_direction, regexp, color)
             VALUES($1, $2, $3, $4)
-                ON CONFLICT ON CONSTRAINT rules_pkey
-	                DO UPDATE SET
-				        name=EXCLUDED.name,
-                        packet_direction=EXCLUDED.packet_direction,
-                        regexp=EXCLUDED.regexp,
-                        color=EXCLUDED.color
         "#,
             rule.name,
             // hmmm nice moment
             packets::types::PacketDirection::from(rule.packet_direction) as PacketDirection,
             rule.regexp.to_string(),
             rule.color,
+        )
+        .execute(&self.db)
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
+
+        Ok(())
+    }
+
+    pub async fn update_rule(&self, rule: domain::Rule) -> Result<(), anyhow::Error> {
+        warn!("{:?}", rule);
+        sqlx::query!(
+            r#"
+        UPDATE rules SET
+            name = $1,
+            packet_direction = $2,
+            regexp = $3, 
+            color = $4
+        WHERE
+            id = $5
+        "#,
+            rule.name,
+            // hmmm nice moment
+            packets::types::PacketDirection::from(rule.packet_direction) as PacketDirection,
+            rule.regexp.to_string(),
+            rule.color,
+            rule.id,
         )
         .execute(&self.db)
         .await
