@@ -15,7 +15,7 @@ use sqlx::postgres::PgPoolOptions;
 
 use handler::{
     delete_rule::delete_rule, delete_service::delete_service,
-    delete_service_to_rule::delete_service_to_rule, get_rules::get_rules,
+    delete_service_to_rules::delete_service_to_rules, get_rules::get_rules,
     get_services::get_services, get_streams_by_service_ids::get_streams_by_service_ids,
     upsert_rule::upsert_rule, upsert_service::upsert_service,
 };
@@ -76,7 +76,7 @@ async fn main() {
         .route("/get-rules", get(get_rules))
         .route("/upsert-rule", post(upsert_rule))
         .route("/delete-rule", delete(delete_rule))
-        .route("/delete-service-to-rule", delete(delete_service_to_rule))
+        .route("/delete-service-to-rules", delete(delete_service_to_rules))
         .layer(middleware::from_fn(info_middleware))
         .layer(Extension(AppContext {
             services_repo: services_repo.clone(),

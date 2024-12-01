@@ -14,6 +14,7 @@ pub struct Service {
 pub struct Rule {
     pub id: i64,
     pub name: String,
+    pub packet_direction: PacketDirection,
     pub regexp: bytes::Regex,
     pub color: String,
 }
@@ -57,10 +58,20 @@ pub struct Packet {
     pub at: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PacketDirection {
     IN,
     OUT,
+}
+
+impl PacketDirection {
+    pub fn from_str(s: &str) -> Option<PacketDirection> {
+        match s {
+            "IN" => Some(PacketDirection::IN),
+            "OUT" => Some(PacketDirection::OUT),
+            _ => None,
+        }
+    }
 }
 
 impl Display for PacketDirection {
