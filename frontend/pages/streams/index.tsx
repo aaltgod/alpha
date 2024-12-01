@@ -1,13 +1,10 @@
-import { Copy, CreditCard, Truck } from "lucide-vue-next";
 import { Separator } from "radix-vue/namespaced";
-import { defineComponent, TransitionGroup } from "vue";
+import { defineComponent } from "vue";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
