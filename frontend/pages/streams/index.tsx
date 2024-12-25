@@ -17,64 +17,77 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-
-type Packet = {
-  direction: string;
-  payload: string;
-  at: string;
-  flag_regexp: string;
-  color: string;
-};
-
-type Row = {
-  number: number;
-  service: string;
-  port: number;
-  rules: string[];
-  at: string;
-  packets: Packet[];
-};
+import { useStreams } from "./composables/use-streams";
+import type { Row } from "./composables/use-streams.types";
+import { toast, Toaster } from "~/components/ui/toast";
+import axios from "axios";
+import type { Service } from "~/types/service";
 
 export default defineComponent({
   name: "StreamsPage",
   setup() {
-    const rows: Row[] = [];
-    for (let i = 200; i > 0; i--) {
-      const newRow: Row = {
-        number: i,
-        service: "service1",
-        port: 7777,
-        rules: ["flag_out", "red"],
-        at: "13:00:12",
-        packets: [
-          {
-            direction: "IN",
-            payload: `GET /get-streams-by-service-ids HTTP/1.1\nContent-Type: application/json\nUser-Agent: PostmanRuntime/7.39.0\nAccept: */*\nPostman-Token: 833d5c87-2f2f-4a88-9d74-ca4a9026a2f4\nHost: localhost:2137\nAccept-Encoding: gzip, deflate, br\nConnection: keep-alive Content-Length: 28\n{ "service_ids": [1] }`,
-            at: "13:00:12",
-            flag_regexp: "FLAG==",
-            color: "#color",
-          },
-          {
-            direction: "OUT",
-            payload:
-              "HTTP/1.1 404 Not Found\ncontent-length: 0\ndate: Sun, 19 May 2024 13:47:01 GMT\n\n\n",
-            at: "13:00:13",
-            flag_regexp: "FLAG==",
-            color: "#color",
-          },
-          {
-            direction: "IN",
-            payload: `GET /get-streams-by-service-ids HTTP/1.1\nContent-Type: application/json\nUser-Agent: PostmanRuntime/7.39.0\nAccept: */*\nPostman-Token: 833d5c87-2f2f-4a88-9d74-ca4a9026a2f4\nHost: localhost:2137\nAccept-Encoding: gzip, deflate, br\nConnection: keep-alive Content-Length: 28\n{ "service_ids": [1] }`,
-            at: "13:00:14",
-            flag_regexp: "FLAG==",
-            color: "#color",
-          },
-        ],
-      };
-      rows.push(newRow);
-    }
+    const { getLastStreams, getStreams, getServices } = useStreams();
 
-    const selectedRow = ref<Row>(rows[0]);
+    const rows = shallowRef<Row[]>([]);
+    const selectedRow = ref<Row>();
+    const services = ref<Service[]>([]);
+
+    const fetchStreams = async () => {
+      try {
+        const streams = await getStreams(
+          services.value.map((s) => s.id),
+          rows.value[0].streamID
+        );
+
+        streams.push(...rows.value);
+
+        rows.value = streams;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          toast({
+            title: "Error",
+            variant: "destructive",
+            description: error.response?.data || error.message,
+          });
+        }
+      }
+    };
+
+    let intervalID: string | number | NodeJS.Timeout | undefined;
+
+    onMounted(async () => {
+      try {
+        rows.value = (await getLastStreams(3000)).rows;
+        selectedRow.value = rows.value[0];
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          toast({
+            title: "Error",
+            variant: "destructive",
+            description: error.response?.data || error.message,
+          });
+        }
+      }
+
+      try {
+        services.value = await getServices();
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          toast({
+            title: "Error",
+            variant: "destructive",
+            description: error.response?.data || error.message,
+          });
+        }
+      }
+
+      intervalID = setInterval(fetchStreams, 5000);
+    });
+
+    onBeforeUnmount(() => {
+      clearInterval(intervalID);
+      rows.value = [];
+    });
 
     const handleButtonClick = (row: Row) => {
       selectedRow.value = row;
@@ -82,6 +95,8 @@ export default defineComponent({
 
     return () => (
       <div class="grid auto-rows-max items-start gap-4">
+        <Toaster />
+
         <div
           class="grid gap-4 h-screen sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2"
           style="grid-template-columns: 500px 1fr"
@@ -100,28 +115,33 @@ export default defineComponent({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((row) => (
+                    {rows.value?.map((row) => (
                       <TableRow
-                        key={row.number}
+                        key={row.streamID}
                         class="w-screen"
                         onClick={() => {
                           handleButtonClick(row);
                         }}
-                        isSelected={row.number === selectedRow.value.number}
+                        isSelected={
+                          row.streamID === selectedRow.value?.streamID
+                        }
                       >
                         <TableCell class="hidden sm:table-cell">
-                          {row.number}
+                          {row.streamID}
                         </TableCell>
                         <TableCell class="hidden sm:table-cell">
-                          {row.service}
+                          {row.serviceName}
                         </TableCell>
                         <TableCell class="hidden sm:table-cell">
-                          {row.port}
+                          {row.servicePort}
                         </TableCell>
                         <TableCell class="hidden sm:table-cell">
                           {row.rules.map((rule) => (
-                            <Badge class="text-xs" variant="outline">
-                              {rule}
+                            <Badge
+                              class="text-xs"
+                              style={`background-color: ${rule.color};`}
+                            >
+                              {rule.name}
                             </Badge>
                           ))}
                         </TableCell>
@@ -139,16 +159,16 @@ export default defineComponent({
             <CardHeader class="flex flex-row items-start bg-muted/50">
               <div class="grid gap-0.5">
                 <CardTitle class="group flex items-center gap-2 text-lg">
-                  № {selectedRow.value.number}
+                  № {selectedRow.value?.streamID}
                 </CardTitle>
                 <CardDescription>
-                  Количестов пакетов: {selectedRow.value.packets.length}
+                  Количестов пакетов: {selectedRow.value?.packets.length}
                 </CardDescription>
               </div>
             </CardHeader>
-            <ScrollArea>
-              <CardContent class="p-6 text-sm">
-                {selectedRow.value.packets.map((packet) => (
+            <CardContent class="p-6 text-sm">
+              <ScrollArea class="h-screen">
+                {selectedRow.value?.packets.map((packet) => (
                   <div>
                     <div class="border-b">
                       <div class="grid gap-3">
@@ -156,15 +176,21 @@ export default defineComponent({
                           {packet.at} {packet.direction}
                         </div>
                         <div class="flex-1 whitespace-pre-wrap p-4 text-sm">
-                          {packet.payload}
+                          {packet.payload.map((textWithColor) => (
+                            <span
+                              style={`background-color: ${textWithColor.color}`}
+                            >
+                              {textWithColor.text}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </div>
                     <Separator class="my-4" />
                   </div>
                 ))}
-              </CardContent>
-            </ScrollArea>
+              </ScrollArea>
+            </CardContent>
           </Card>
         </div>
       </div>

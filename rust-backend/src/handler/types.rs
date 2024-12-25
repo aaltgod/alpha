@@ -59,7 +59,7 @@ impl IntoResponse for AppError {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Service {
     #[serde(skip_deserializing)]
-    pub id: i64,
+    pub id: i32,
     pub name: String,
     pub port: i32,
 }
@@ -91,10 +91,15 @@ pub struct ServiceWithRules {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Packet {
-    pub payload: String,
-    pub rules_with_borders: Vec<RuleWithBorders>,
+    pub payload: Vec<TextWithColor>,
     pub direction: String,
     pub at: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TextWithColor {
+    pub text: String,
+    pub color: String,
 }
 
 #[derive(Clone, Debug, Serialize)]

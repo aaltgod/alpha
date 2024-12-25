@@ -8,6 +8,7 @@ use axum::{Extension, Json};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use super::get_last_streams::build_texts_with_colors;
 use super::types::{Rule, Stream};
 
 pub async fn get_streams_by_service_ids(
@@ -28,7 +29,7 @@ pub async fn get_streams_by_service_ids(
             services.into_iter().map(|s| s.port).collect(),
             req.last_stream_id,
             // TODO: сделать limit настраиваемым.
-            20,
+            100,
         )
         .await
         .map_err(AppError::InternalServerError)?;
@@ -54,7 +55,7 @@ pub async fn get_streams_by_service_ids(
             let mut rules_with_borders: Vec<RuleWithBorders> = vec![];
 
             rules_by_service_port
-                .get(&stream.service_port)
+                .get(&stream.0.service_port)
                 .map_or(vec![], |rules| rules.to_owned())
                 .into_iter()
                 .for_each(|r| {
@@ -84,8 +85,7 @@ pub async fn get_streams_by_service_ids(
             }
 
             handler_packets.push(Packet {
-                payload: p.payload,
-                rules_with_borders,
+                payload: build_texts_with_colors(&p.payload, &rules_with_borders),
                 direction: p.direction.to_string(),
                 at: p.at.to_string(),
             });
@@ -93,7 +93,7 @@ pub async fn get_streams_by_service_ids(
 
         let service_name = &rules_by_service
             .keys()
-            .find(|&s| s.port == stream.service_port)
+            .find(|&s| s.port == stream.0.service_port)
             .map_or("", |s| &s.name);
 
         let mut unique_rules: Vec<Rule> = rules_map.keys().cloned().collect();
@@ -101,9 +101,9 @@ pub async fn get_streams_by_service_ids(
 
         resp.stream_with_packets.push(StreamWithPackets {
             stream: Stream {
-                id: stream.id,
+                id: stream.0.id,
                 service_name: service_name.to_string(),
-                service_port: stream.service_port,
+                service_port: stream.0.service_port,
                 rules: unique_rules,
                 started_at: started_at.to_string(),
                 ended_at: ended_at.to_string(),

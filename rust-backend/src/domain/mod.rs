@@ -5,7 +5,7 @@ use regex::bytes;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Service {
-    pub id: i64,
+    pub id: i32,
     pub name: String,
     pub port: i32,
 }

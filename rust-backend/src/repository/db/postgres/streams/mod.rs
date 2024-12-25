@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use sqlx::PgPool;
+use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use crate::domain;
@@ -50,7 +51,7 @@ impl Repository {
         ports: Vec<i32>,
         stream_id: i64,
         limit: i64,
-    ) -> Result<BTreeMap<domain::Stream, Vec<domain::Packet>>, anyhow::Error> {
+    ) -> Result<BTreeMap<Reverse<domain::Stream>, Vec<domain::Packet>>, anyhow::Error> {
         let records = match sqlx::query!(
             r#"
         SELECT
@@ -67,7 +68,7 @@ impl Repository {
                         LIMIT $3
                     ) AS streams
                         INNER JOIN packets ON streams.id = packets.stream_id
-        ORDER BY streams.id, packets.at
+        ORDER BY streams.id DESC, packets.at
         "#,
             ports as _,
             stream_id,
@@ -85,7 +86,7 @@ impl Repository {
             }
         };
 
-        let mut result: BTreeMap<domain::Stream, Vec<domain::Packet>> = BTreeMap::new();
+        let mut result: BTreeMap<Reverse<domain::Stream>, Vec<domain::Packet>> = BTreeMap::new();
 
         records.into_iter().for_each(|record| {
             let packet = domain::Packet {
@@ -97,10 +98,10 @@ impl Repository {
             };
 
             result
-                .entry(domain::Stream {
+                .entry(std::cmp::Reverse(domain::Stream {
                     id: record.stream_id,
                     service_port: record.service_port as i32,
-                })
+                }))
                 .and_modify(|packets| packets.push(packet.clone()))
                 .or_insert(vec![packet]);
         });
@@ -111,7 +112,7 @@ impl Repository {
     pub async fn get_last_streams(
         &self,
         limit: i64,
-    ) -> Result<BTreeMap<domain::Stream, Vec<domain::Packet>>, anyhow::Error> {
+    ) -> Result<BTreeMap<Reverse<domain::Stream>, Vec<domain::Packet>>, anyhow::Error> {
         let records = match sqlx::query!(
             r#"
         SELECT
@@ -125,7 +126,7 @@ impl Repository {
                         LIMIT $1
                     ) AS streams
                         INNER JOIN packets ON streams.id = packets.stream_id
-        ORDER BY streams.id, packets.at
+        ORDER BY streams.id DESC, packets.at
         "#,
             limit
         )
@@ -141,7 +142,7 @@ impl Repository {
             }
         };
 
-        let mut result: BTreeMap<domain::Stream, Vec<domain::Packet>> = BTreeMap::new();
+        let mut result: BTreeMap<Reverse<domain::Stream>, Vec<domain::Packet>> = BTreeMap::new();
 
         records.into_iter().for_each(|record| {
             let packet = domain::Packet {
@@ -153,10 +154,10 @@ impl Repository {
             };
 
             result
-                .entry(domain::Stream {
+                .entry(std::cmp::Reverse(domain::Stream {
                     id: record.stream_id,
                     service_port: record.service_port as i32,
-                })
+                }))
                 .and_modify(|packets| packets.push(packet.clone()))
                 .or_insert(vec![packet]);
         });

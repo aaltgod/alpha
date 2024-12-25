@@ -71,10 +71,10 @@ async fn main() {
         .route("/get-services", get(get_services))
         .route("/upsert-service", post(upsert_service))
         .route("/delete-service", delete(delete_service))
-        .route("/get-last-streams", get(get_last_streams))
+        .route("/get-last-streams", post(get_last_streams))
         .route(
             "/get-streams-by-service-ids",
-            get(get_streams_by_service_ids),
+            post(get_streams_by_service_ids),
         )
         .route("/get-rules", get(get_rules))
         .route("/create-rule", post(create_rule))
@@ -119,7 +119,7 @@ async fn info_middleware(
     req: Request<Body>,
     next: Next<Body>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    tracing::info!("{:?} {:?}", req.uri(), req.body());
+    tracing::warn!("{:?} {:?}", req.uri(), req.body());
 
     Ok(next.run(req).await)
 }
