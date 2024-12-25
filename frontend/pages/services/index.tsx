@@ -39,6 +39,7 @@ export default defineComponent({
             rules: serviceWithRules.rules?.map((rule) => ({
               id: rule.id,
               name: rule.name,
+              packetDirection: rule.packet_direction,
               regexp: rule.regexp,
               color: rule.color,
             })),
@@ -49,15 +50,7 @@ export default defineComponent({
           toast({
             title: "Error",
             variant: "destructive",
-            description: error.response?.data,
-          });
-        }
-
-        if (error instanceof Error) {
-          toast({
-            title: "Error",
-            variant: "destructive",
-            description: error.message,
+            description: error.response?.data || error.message,
           });
         }
       }
@@ -85,7 +78,7 @@ export default defineComponent({
           toast({
             title: "Error",
             variant: "destructive",
-            description: error.response?.data,
+            description: error.response?.data || error.message,
           });
         }
       }

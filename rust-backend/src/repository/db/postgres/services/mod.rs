@@ -85,7 +85,7 @@ impl Repository {
 
         for record in records.into_iter() {
             let service = domain::Service {
-                id: record.service_id,
+                id: record.service_id as i32,
                 name: record.service_name,
                 port: record.service_port as i32,
             };
@@ -130,7 +130,7 @@ impl Repository {
 
         for record in records.into_iter() {
             services.push(domain::Service {
-                id: record.id,
+                id: record.id as i32,
                 name: record.name,
                 port: record.port as i32,
             });
@@ -156,7 +156,7 @@ impl Repository {
         .map_err(|e| anyhow!(e.to_string()))?;
 
         Ok(domain::Service {
-            id: record.service_id,
+            id: record.service_id as i32,
             name: record.service_name,
             port: record.service_port,
         })
@@ -212,7 +212,7 @@ impl Repository {
 
             // Значения должны возвращаться всегда.
             res.entry(domain::Service {
-                id: record.service_id,
+                id: record.service_id as i32,
                 name: record.service_name,
                 port: record.service_port,
             })
